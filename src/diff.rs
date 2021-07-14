@@ -1,3 +1,9 @@
+#[derive(Clone,Debug)]
+pub enum Line {
+    Normal(String),
+    Added(String),
+    Deleted(String)
+}
 type Table = Vec<Vec<usize>>;
 
 fn split_lines(content:&String)->Vec<String>{
@@ -32,33 +38,34 @@ fn fill_table(table:&mut Table,old:&Vec<String>,new:&Vec<String>){
     }
 }
 
-fn generate_sequence(table:&Table,old:&Vec<String>,new:&Vec<String>)->Vec<String> {
+fn generate_sequence(table:&Table,old:&Vec<String>,new:&Vec<String>)->Vec<Line> {
 
     let mut j = old.len();
     let mut i = new.len();
-    let mut index = table[j][i];
-    let mut output : Vec<String> = vec![String::new();index];
+    let mut output = vec![];
 
     while j > 0 && i > 0 {
 
         if old[j-1] == new[i-1] {
-            output[index-1] = old[j-1].clone();
+            output.push(Line::Normal(old[j-1].clone()));
             i -= 1;
             j -= 1;
-            index -= 1;
         }
         else if table[j-1][i] > table[j][i-1] {
+            output.push(Line::Deleted(old[j-1].clone()));
             j -= 1;
         }
         else{
+            output.push(Line::Added(new[i-1].clone()));
             i -= 1;
         }
     }
 
+    output.reverse();
     output
 }
 
-pub fn diff(old:&String,new:&String) -> Vec<String>{
+pub fn diff(old:&String,new:&String) -> Vec<Line>{
 
     let old : Vec<String> = split_lines(old);
     let new : Vec<String> = split_lines(new);

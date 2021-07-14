@@ -2,19 +2,18 @@ mod diff;
 
 fn main() {
 
-    let old = "
-hello
+    let old = 
+"hello
 hei
-heil
-    ";
+heil";
 
-    let new = "
-helli
+    let new = 
+"hello
+hei
 kuft
-heil
-    ";
+heil";
 
     for l in diff::diff(&String::from(old), &String::from(new)) {
-        println!("{}",l);
+        println!("{:?}",l);
     }
 }
