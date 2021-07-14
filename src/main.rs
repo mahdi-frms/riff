@@ -3,12 +3,14 @@ mod diff;
 fn main() {
 
     let old = 
-"hello
+"www
+hello
 hei
 heil";
 
     let new = 
-"hello
+"vg
+hello
 hei
 kuft
 heil";

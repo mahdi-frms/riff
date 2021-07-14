@@ -61,6 +61,16 @@ fn generate_sequence(table:&Table,old:&Vec<String>,new:&Vec<String>)->Vec<Line> 
         }
     }
 
+    while i > 0 {
+        output.push(Line::Added(new[i-1].clone()));
+        i -= 1;
+    }
+
+    while j > 0 {
+        output.push(Line::Deleted(old[j-1].clone()));
+        j -= 1;
+    }
+
     output.reverse();
     output
 }
