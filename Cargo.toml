@@ -7,6 +7,7 @@ repository = "https://github.com/mahdi-frms/riff"
 author = ["mahdi-frms <mahdif1380@outlook.com>"]
 description = "file comparison utility built in rust"
 categories = ["command-line-utilities"]
+license = "MIT"
 
 [dependencies]
 colored = "2"
