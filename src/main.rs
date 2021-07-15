@@ -1,6 +1,6 @@
 use std::process::exit;
-
 use diff::diff;
+use colored::*;
 
 mod diff;
 
@@ -36,9 +36,9 @@ fn main() {
     let comp = diff(&old, &new);
     for line in comp {
         match line {
-            diff::Line::Added(text)=> println!("+|{}",text),
-            diff::Line::Deleted(text)=> println!("-|{}",text),
-            diff::Line::Normal(text)=> println!(" |{}",text),
+            diff::Line::Added(text)=> println!("{}{}","|+|".green(),text.green()),
+            diff::Line::Deleted(text)=> println!("{}{}","|-|".red(),text.red()),
+            diff::Line::Normal(text)=> println!("| |{}",text),
         }
     }   
 }
