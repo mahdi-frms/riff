@@ -1,4 +1,4 @@
-#[derive(Clone,Debug,PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone,Debug,PartialEq, Eq)]
 pub enum Line<T> {
     Normal(T),
     Added(T),
@@ -23,7 +23,7 @@ fn init_table<T>(old:&Vec<T>,new:&Vec<T>) -> Table {
 }
 
 fn fill_table<T> (table:&mut Table,old:&Vec<T>,new:&Vec<T>)
-where T : Eq{
+where T : Eq + PartialEq{
     for j in 0..old.len() + 1 {
         for i in 0..new.len() + 1 {
             table[j][i] = if i * j == 0 {
@@ -39,37 +39,37 @@ where T : Eq{
     }
 }
 
-fn generate_sequence<T>(table:&Table,old:&Vec<T>,new:&Vec<T>)->Vec<Line<T>> 
-where T : Clone + Eq{
+fn generate_sequence<'a,T>(table:&Table,old:&'a Vec<T>,new:&'a Vec<T>)->Vec<Line<&'a T>> 
+where T : Eq + PartialEq{
 
     let mut j = old.len();
     let mut i = new.len();
-    let mut output = vec![];
+    let mut output : Vec<Line<&'a T>>= vec![];
 
     while j > 0 && i > 0 {
 
         if old[j-1] == new[i-1] {
-            output.push(Line::Normal(old[j-1].clone()));
+            output.push(Line::Normal(&old[j-1]));
             i -= 1;
             j -= 1;
         }
         else if table[j-1][i] > table[j][i-1] {
-            output.push(Line::Deleted(old[j-1].clone()));
+            output.push(Line::Deleted(&old[j-1]));
             j -= 1;
         }
         else{
-            output.push(Line::Added(new[i-1].clone()));
+            output.push(Line::Added(&new[i-1]));
             i -= 1;
         }
     }
 
     while i > 0 {
-        output.push(Line::Added(new[i-1].clone()));
+        output.push(Line::Added(&new[i-1]));
         i -= 1;
     }
 
     while j > 0 {
-        output.push(Line::Deleted(old[j-1].clone()));
+        output.push(Line::Deleted(&old[j-1]));
         j -= 1;
     }
 
@@ -77,8 +77,8 @@ where T : Clone + Eq{
     output
 }
 
-pub fn diff<T>(old:&Vec<T>,new:&Vec<T>) -> Vec<Line<T>>
-where T : Clone + Eq {
+pub fn diff<'a,T>(old:&'a Vec<T>,new:&'a Vec<T>) -> Vec<Line<&'a T>>
+where T : Eq + PartialEq{
 
     let mut table = init_table(&old, &new);
     fill_table(&mut table, old, new);
@@ -93,6 +93,13 @@ mod test {
     fn compare(old:&str,new:&str,arr:Vec<Line<&str>>){
         let old = split_lines(old);
         let new = split_lines(new);
+        let arr : Vec<Line<&&str>> = arr.iter().map(|s|{
+            match s {
+                Line::Normal(r)=>Line::Normal(r),
+                Line::Deleted(r)=>Line::Deleted(r),
+                Line::Added(r)=>Line::Added(r)
+            }
+        }).collect();
         assert_eq!(diff(&old, &new),arr);
     }
 
