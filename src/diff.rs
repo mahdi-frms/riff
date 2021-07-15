@@ -6,7 +6,7 @@ pub enum Line<T> {
 }
 type Table = Vec<Vec<usize>>;
 
-fn split_lines(content:&str)->Vec<&str>{
+pub fn split_lines(content:&str)->Vec<&str>{
     content.split('\n').collect()
 }
 
