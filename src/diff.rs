@@ -1,8 +1,8 @@
 #[derive(Clone,Debug,PartialEq, Eq, PartialOrd, Ord)]
-pub enum Line<'a> {
-    Normal(&'a str),
-    Added(&'a str),
-    Deleted(&'a str)
+pub enum Line<T> {
+    Normal(T),
+    Added(T),
+    Deleted(T)
 }
 type Table = Vec<Vec<usize>>;
 
@@ -10,7 +10,7 @@ fn split_lines(content:&str)->Vec<&str>{
     content.split('\n').collect()
 }
 
-fn init_table(old:&Vec<&str>,new:&Vec<&str>) -> Table {
+fn init_table<T>(old:&Vec<T>,new:&Vec<T>) -> Table {
     let mut table = Vec::with_capacity(old.len()+1);
     for _ in 0..old.len()+1 {
         let mut row = Vec::with_capacity(new.len()+1);
@@ -22,7 +22,8 @@ fn init_table(old:&Vec<&str>,new:&Vec<&str>) -> Table {
     table
 }
 
-fn fill_table(table:&mut Table,old:&Vec<&str>,new:&Vec<&str>){
+fn fill_table<T> (table:&mut Table,old:&Vec<T>,new:&Vec<T>)
+where T : Eq{
     for j in 0..old.len() + 1 {
         for i in 0..new.len() + 1 {
             table[j][i] = if i * j == 0 {
@@ -38,7 +39,8 @@ fn fill_table(table:&mut Table,old:&Vec<&str>,new:&Vec<&str>){
     }
 }
 
-fn generate_sequence<'a>(table:&Table,old:&'a Vec<&str>,new:&'a Vec<&str>)->Vec<Line<'a>> {
+fn generate_sequence<T>(table:&Table,old:&Vec<T>,new:&Vec<T>)->Vec<Line<T>> 
+where T : Clone + Eq{
 
     let mut j = old.len();
     let mut i = new.len();
@@ -75,11 +77,12 @@ fn generate_sequence<'a>(table:&Table,old:&'a Vec<&str>,new:&'a Vec<&str>)->Vec<
     output
 }
 
-pub fn diff<'a>(old:&'a Vec<&str>,new:&'a Vec<&str>) -> Vec<Line<'a>>{
+pub fn diff<T>(old:&Vec<T>,new:&Vec<T>) -> Vec<Line<T>>
+where T : Clone + Eq {
 
     let mut table = init_table(&old, &new);
-    fill_table(&mut table, &old, &new);
-    generate_sequence(&table, &old, &new)
+    fill_table(&mut table, old, new);
+    generate_sequence(&table, old, new)
 }
 
 #[cfg(test)]
@@ -87,7 +90,7 @@ mod test {
 
     use super::*;
 
-    fn compare<'a>(old:&'a str,new:&'a str,arr:Vec<Line<'a>>){
+    fn compare(old:&str,new:&str,arr:Vec<Line<&str>>){
         let old = split_lines(old);
         let new = split_lines(new);
         assert_eq!(diff(&old, &new),arr);
