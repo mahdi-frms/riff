@@ -1,16 +1,16 @@
 #[derive(Clone,Debug,PartialEq, Eq, PartialOrd, Ord)]
-pub enum Line {
-    Normal(String),
-    Added(String),
-    Deleted(String)
+pub enum Line<'a> {
+    Normal(&'a str),
+    Added(&'a str),
+    Deleted(&'a str)
 }
 type Table = Vec<Vec<usize>>;
 
-fn split_lines(content:&String)->Vec<String>{
-    content.split('\n').map(|x|String::from(x)).collect()
+fn split_lines(content:&str)->Vec<&str>{
+    content.split('\n').collect()
 }
 
-fn init_table(old:&Vec<String>,new:&Vec<String>) -> Table {
+fn init_table(old:&Vec<&str>,new:&Vec<&str>) -> Table {
     let mut table = Vec::with_capacity(old.len()+1);
     for _ in 0..old.len()+1 {
         let mut row = Vec::with_capacity(new.len()+1);
@@ -22,7 +22,7 @@ fn init_table(old:&Vec<String>,new:&Vec<String>) -> Table {
     table
 }
 
-fn fill_table(table:&mut Table,old:&Vec<String>,new:&Vec<String>){
+fn fill_table(table:&mut Table,old:&Vec<&str>,new:&Vec<&str>){
     for j in 0..old.len() + 1 {
         for i in 0..new.len() + 1 {
             table[j][i] = if i * j == 0 {
@@ -38,7 +38,7 @@ fn fill_table(table:&mut Table,old:&Vec<String>,new:&Vec<String>){
     }
 }
 
-fn generate_sequence(table:&Table,old:&Vec<String>,new:&Vec<String>)->Vec<Line> {
+fn generate_sequence<'a>(table:&Table,old:&'a Vec<&str>,new:&'a Vec<&str>)->Vec<Line<'a>> {
 
     let mut j = old.len();
     let mut i = new.len();
@@ -75,10 +75,7 @@ fn generate_sequence(table:&Table,old:&Vec<String>,new:&Vec<String>)->Vec<Line> 
     output
 }
 
-pub fn diff(old:&String,new:&String) -> Vec<Line>{
-
-    let old : Vec<String> = split_lines(old);
-    let new : Vec<String> = split_lines(new);
+pub fn diff<'a>(old:&'a Vec<&str>,new:&'a Vec<&str>) -> Vec<Line<'a>>{
 
     let mut table = init_table(&old, &new);
     fill_table(&mut table, &old, &new);
@@ -90,97 +87,99 @@ mod test {
 
     use super::*;
 
-    fn compare(old:&str,new:&str)->Vec<Line> {
-        diff(&String::from(old), &String::from(new))
+    fn compare<'a>(old:&'a str,new:&'a str,arr:Vec<Line<'a>>){
+        let old = split_lines(old);
+        let new = split_lines(new);
+        assert_eq!(diff(&old, &new),arr);
     }
 
     #[test]
     fn no_difference_between_same_strings(){
-        assert_eq!(compare("hello\nworld", "hello\nworld"),vec![
-            Line::Normal(String::from("hello")),
-            Line::Normal(String::from("world"))
+        compare("hello\nworld",  "hello\nworld",vec![
+            Line::Normal("hello"),
+            Line::Normal("world")
         ]);
     }
 
     #[test]
     fn middle_difference(){
-        assert_eq!(compare("hello\nhi\nworld", "hello\nbye\nworld"),vec![
-            Line::Normal(String::from("hello")),
-            Line::Deleted(String::from("hi")),
-            Line::Added(String::from("bye")),
-            Line::Normal(String::from("world"))
+        compare("hello\nhi\nworld",  "hello\nbye\nworld",vec![
+            Line::Normal("hello"),
+            Line::Deleted("hi"),
+            Line::Added("bye"),
+            Line::Normal("world")
         ]);
     }
 
     #[test]
     fn middle_difference_various_size(){
-        assert_eq!(compare("hello\nhi\nmy\nworld", "hello\nbye\nworld"),vec![
-            Line::Normal(String::from("hello")),
-            Line::Deleted(String::from("hi")),
-            Line::Deleted(String::from("my")),
-            Line::Added(String::from("bye")),
-            Line::Normal(String::from("world"))
+        compare("hello\nhi\nmy\nworld",  "hello\nbye\nworld",vec![
+            Line::Normal("hello"),
+            Line::Deleted("hi"),
+            Line::Deleted("my"),
+            Line::Added("bye"),
+            Line::Normal("world")
         ]);
     }
 
     #[test]
     fn middle_difference_extra(){
-        assert_eq!(compare("hello\nworld", "hello\nbye\nworld"),vec![
-            Line::Normal(String::from("hello")),
-            Line::Added(String::from("bye")),
-            Line::Normal(String::from("world"))
+        compare("hello\nworld",  "hello\nbye\nworld",vec![
+            Line::Normal("hello"),
+            Line::Added("bye"),
+            Line::Normal("world")
         ]);
     }
 
     #[test]
     fn middle_difference_removed(){
-        assert_eq!(compare("hello\nhi\nworld", "hello\nworld"),vec![
-            Line::Normal(String::from("hello")),
-            Line::Deleted(String::from("hi")),
-            Line::Normal(String::from("world"))
+        compare("hello\nhi\nworld",  "hello\nworld",vec![
+            Line::Normal("hello"),
+            Line::Deleted("hi"),
+            Line::Normal("world")
         ]);
     }
 
     #[test]
     fn after_added(){
-        assert_eq!(compare("hello", "hello\nworld"),vec![
-            Line::Normal(String::from("hello")),
-            Line::Added(String::from("world"))
+        compare("hello",  "hello\nworld",vec![
+            Line::Normal("hello"),
+            Line::Added("world")
         ]);
     }
 
     #[test]
     fn after_removed(){
-        assert_eq!(compare("hello\nworld", "hello"),vec![
-            Line::Normal(String::from("hello")),
-            Line::Deleted(String::from("world"))
+        compare("hello\nworld",  "hello",vec![
+            Line::Normal("hello"),
+            Line::Deleted("world")
         ]);
     }
 
     #[test]
     fn before_removed(){
-        assert_eq!(compare("hello\nworld", "world"),vec![
-            Line::Deleted(String::from("hello")),
-            Line::Normal(String::from("world"))
+        compare("hello\nworld",  "world",vec![
+            Line::Deleted("hello"),
+            Line::Normal("world")
         ]);
     }
 
     #[test]
     fn before_added(){
-        assert_eq!(compare("hello\nworld", "hey\nhello\nworld"),vec![
-            Line::Added(String::from("hey")),
-            Line::Normal(String::from("hello")),
-            Line::Normal(String::from("world")),
+        compare("hello\nworld",  "hey\nhello\nworld",vec![
+            Line::Added("hey"),
+            Line::Normal("hello"),
+            Line::Normal("world"),
         ]);
     }
 
     #[test]
     fn totally_changed(){
-        assert_eq!(compare("hello\nworld", "hi\nbuddy"),vec![
-            Line::Deleted(String::from("hello")),
-            Line::Deleted(String::from("world")),
-            Line::Added(String::from("hi")),
-            Line::Added(String::from("buddy")),
+        compare("hello\nworld",  "hi\nbuddy",vec![
+            Line::Deleted("hello"),
+            Line::Deleted("world"),
+            Line::Added("hi"),
+            Line::Added("buddy"),
         ]);
     }
 }
